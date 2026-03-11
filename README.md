@@ -38,9 +38,21 @@ docker compose run --rm eval --task libero_10 --n-episodes 20 --batch-size 2
 | `--task-ids` | all | Specific task IDs to evaluate |
 | `--output-dir` | `/workspace/results` | Results directory |
 
-### Supported tasks
+### LIBERO benchmark structure
 
-`libero_spatial`, `libero_object`, `libero_goal`, `libero_10`, `libero_90`
+LIBERO 벤치마크는 **5개의 task suite**로 구성되며, 각 suite에는 고유한 자연어 instruction을 가진 태스크들이 포함되어 있다.
+
+| Task Suite | 태스크 수 | 설명 |
+|---|---|---|
+| `libero_spatial` | 10 | 공간 관계 이해 |
+| `libero_object` | 10 | 객체 인식 |
+| `libero_goal` | 10 | 목표 상태 달성 |
+| `libero_10` | 10 | 다양한 태스크 혼합 |
+| `libero_90` | 90 | 대규모 태스크 셋 |
+
+각 태스크는 하나의 자연어 instruction(e.g. *"put the bowl on the stove"*)에 대응하며,
+모델은 이 instruction을 입력받아 로봇을 조작한다.
+평가 시 `--n-episodes`만큼 반복 실행하여 **성공률(success rate)**을 측정한다.
 
 ## Results
 
