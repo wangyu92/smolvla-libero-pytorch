@@ -1,0 +1,22 @@
+services:
+  eval:
+    build: .
+    shm_size: '8gb'
+    environment:
+      - HF_HOME=/cache/huggingface
+      - HF_TOKEN=${HF_TOKEN}
+      - MUJOCO_GL=egl
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics
+    volumes:
+      - hf-cache:/cache/huggingface
+      - ./results:/workspace/results
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+volumes:
+  hf-cache:
