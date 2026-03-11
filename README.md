@@ -7,14 +7,14 @@ Docker wrapper for evaluating the [SmolVLA](https://huggingface.co/HuggingFaceVL
 - NVIDIA GPU with CUDA support
 - Docker with [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
 - Docker Compose v2+
-- (선택) HuggingFace token (`HF_TOKEN`) — 모델이 public(Apache 2.0)이므로 토큰 없이도 다운로드 가능. 설정 시 rate limit 완화
+- (Optional) HuggingFace token (`HF_TOKEN`) — the model is public (Apache 2.0), so it can be downloaded without a token. Setting one helps avoid rate limits
 
 ## Usage
 
 ### Docker Compose (recommended)
 
 ```bash
-export HF_TOKEN=hf_...  # 선택 사항 — 없어도 동작함
+export HF_TOKEN=hf_...  # optional — works without it
 docker compose build
 docker compose run --rm eval                          # defaults: libero_10, 10 episodes
 docker compose run --rm eval --task libero_spatial     # choose a task suite
@@ -40,19 +40,19 @@ docker compose run --rm eval --task libero_10 --n-episodes 20 --batch-size 2
 
 ### LIBERO benchmark structure
 
-LIBERO 벤치마크는 **5개의 task suite**로 구성되며, 각 suite에는 고유한 자연어 instruction을 가진 태스크들이 포함되어 있다.
+The LIBERO benchmark consists of **5 task suites**, each containing tasks with unique natural language instructions.
 
-| Task Suite | 태스크 수 | 설명 |
+| Task Suite | # Tasks | Description |
 |---|---|---|
-| `libero_spatial` | 10 | 공간 관계 이해 |
-| `libero_object` | 10 | 객체 인식 |
-| `libero_goal` | 10 | 목표 상태 달성 |
-| `libero_10` | 10 | 다양한 태스크 혼합 |
-| `libero_90` | 90 | 대규모 태스크 셋 |
+| `libero_spatial` | 10 | Spatial relation understanding |
+| `libero_object` | 10 | Object recognition |
+| `libero_goal` | 10 | Goal state achievement |
+| `libero_10` | 10 | Mixed task variety |
+| `libero_90` | 90 | Large-scale task set |
 
-각 태스크는 하나의 자연어 instruction(e.g. *"put the bowl on the stove"*)에 대응하며,
-모델은 이 instruction을 입력받아 로봇을 조작한다.
-평가 시 `--n-episodes`만큼 반복 실행하여 **성공률(success rate)**을 측정한다.
+Each task corresponds to a single natural language instruction (e.g. *"put the bowl on the stove"*),
+and the model receives this instruction as input to control the robot.
+During evaluation, each task is run `--n-episodes` times to measure the **success rate**.
 
 ## Results
 
