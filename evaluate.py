@@ -30,6 +30,17 @@ def print_gpu_info():
     print()
 
 
+def get_task_instructions(task_suite_name: str) -> dict[int, str]:
+    """Return {task_id: language_instruction} for a LIBERO task suite."""
+    from libero.libero import benchmark
+    benchmark_dict = benchmark.get_benchmark_dict()
+    task_suite = benchmark_dict[task_suite_name]()
+    return {
+        i: task_suite.get_task(i).language
+        for i in range(task_suite.n_tasks)
+    }
+
+
 def run_eval(task: str, n_episodes: int, batch_size: int,
              task_ids: list[int] | None, output_dir: Path) -> Path:
     """Run lerobot-eval and return path to the results JSON."""
@@ -62,15 +73,15 @@ def run_eval(task: str, n_episodes: int, batch_size: int,
     return json_files[0]
 
 
-def print_results(json_path: Path):
+def print_results(json_path: Path, instructions: dict[int, str]):
     """Parse lerobot results JSON and print a summary table."""
     data = json.loads(json_path.read_text())
 
-    print("\n" + "=" * 60)
+    print("\n" + "=" * 100)
     print("EVALUATION RESULTS")
-    print("=" * 60)
+    print("=" * 100)
 
-    task_rows = []  # list of (label, success_rate)
+    task_rows = []  # list of (label, instruction, success_rate)
 
     # lerobot 0.5.0 format: per_task is a list of {task_group, task_id, metrics}
     if "per_task" in data and isinstance(data["per_task"], list):
@@ -79,25 +90,28 @@ def print_results(json_path: Path):
             group = entry.get("task_group", "")
             successes = entry.get("metrics", {}).get("successes", [])
             rate = sum(successes) / len(successes) if successes else 0.0
-            task_rows.append((f"{group}/task_{tid}", rate))
+            instr = instructions.get(tid, "") if isinstance(tid, int) else ""
+            task_rows.append((f"{group}/task_{tid}", instr, rate))
+            # Augment JSON with instruction
+            entry["instruction"] = instr
     # dict format fallback (older lerobot or other tools)
     elif "per_task" in data and isinstance(data["per_task"], dict):
         for name, info in sorted(data["per_task"].items()):
             rate = info if isinstance(info, (int, float)) else info.get("success_rate", 0)
-            task_rows.append((name, rate))
+            task_rows.append((name, "", rate))
     else:
         # Walk top-level keys for success metrics
         for k, v in data.items():
             if isinstance(v, dict) and "success_rate" in v:
-                task_rows.append((k, v["success_rate"]))
+                task_rows.append((k, "", v["success_rate"]))
             elif "success" in k.lower() and isinstance(v, (int, float)):
-                task_rows.append((k, v))
+                task_rows.append((k, "", v))
 
     if task_rows:
-        print(f"\n{'Task':<40} {'Success Rate':>12}")
-        print("-" * 54)
-        for name, rate in task_rows:
-            print(f"{name:<40} {rate:>11.1%}")
+        print(f"\n{'Task':<40} {'Instruction':<45} {'Success Rate':>12}")
+        print("-" * 99)
+        for name, instr, rate in task_rows:
+            print(f"{name:<40} {instr:<45} {rate:>11.1%}")
 
     # Overall success rate from per_group or overall
     avg_success = None
@@ -108,14 +122,17 @@ def print_results(json_path: Path):
         if rates:
             avg_success = sum(rates) / len(rates)
     elif task_rows:
-        avg_success = sum(r for _, r in task_rows) / len(task_rows)
+        avg_success = sum(r for _, _, r in task_rows) / len(task_rows)
 
     if avg_success is not None:
-        print("-" * 54)
-        print(f"{'AVERAGE':<40} {avg_success:>11.1%}")
+        print("-" * 99)
+        print(f"{'AVERAGE':<40} {'':<45} {avg_success:>11.1%}")
 
-    print("=" * 60)
+    print("=" * 100)
     print(f"\nFull results: {json_path}")
+
+    # Save augmented data back to JSON
+    json_path.write_text(json.dumps(data, indent=2))
 
 
 def main():
@@ -142,10 +159,12 @@ def main():
         print(f"Task IDs:   {args.task_ids}")
     print()
 
+    instructions = get_task_instructions(args.task)
+
     output_dir = Path(args.output_dir)
     json_path = run_eval(args.task, args.n_episodes, args.batch_size,
                          args.task_ids, output_dir)
-    print_results(json_path)
+    print_results(json_path, instructions)
 
 
 if __name__ == "__main__":

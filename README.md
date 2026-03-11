@@ -7,14 +7,14 @@ Docker wrapper for evaluating the [SmolVLA](https://huggingface.co/HuggingFaceVL
 - NVIDIA GPU with CUDA support
 - Docker with [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
 - Docker Compose v2+
-- HuggingFace token (`HF_TOKEN` environment variable)
+- (선택) HuggingFace token (`HF_TOKEN`) — 모델이 public(Apache 2.0)이므로 토큰 없이도 다운로드 가능. 설정 시 rate limit 완화
 
 ## Usage
 
 ### Docker Compose (recommended)
 
 ```bash
-export HF_TOKEN=hf_...
+export HF_TOKEN=hf_...  # 선택 사항 — 없어도 동작함
 docker compose build
 docker compose run --rm eval                          # defaults: libero_10, 10 episodes
 docker compose run --rm eval --task libero_spatial     # choose a task suite
