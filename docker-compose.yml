@@ -7,6 +7,7 @@ services:
       - HF_TOKEN=${HF_TOKEN}
       - MUJOCO_GL=egl
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics
+      - PYTHONUNBUFFERED=1
     volumes:
       - hf-cache:/cache/huggingface
       - ./results:/workspace/results

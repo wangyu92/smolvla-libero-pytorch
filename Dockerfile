@@ -54,11 +54,26 @@ RUN TQFILE=$(find /usr/local/lib -path "*/diffusers/quantizers/torchao/torchao_q
     sed -i '1i import logging\nlogger = logging.getLogger(__name__)' "$TQFILE" && \
     echo "Patched $TQFILE"
 
+# Pre-create LIBERO config to avoid interactive prompt at runtime
+RUN python -c "\
+import importlib.util, os, yaml; \
+root = os.path.dirname(importlib.util.find_spec('libero.libero').origin); \
+os.makedirs(os.path.expanduser('~/.libero'), exist_ok=True); \
+cfg = { \
+  'benchmark_root': root, \
+  'bddl_files': os.path.join(root, 'bddl_files'), \
+  'init_states': os.path.join(root, 'init_files'), \
+  'datasets': os.path.join(root, '..', 'datasets'), \
+  'assets': os.path.join(root, 'assets'), \
+}; \
+open(os.path.expanduser('~/.libero/config.yaml'), 'w').write(yaml.dump(cfg)); \
+print('LIBERO config written:', cfg)"
+
 # Smoke-test the full import chain (diffusers → lerobot)
 RUN python -c "from transformers import AutoProcessor; print('AutoProcessor import OK')" && \
     python -c "from diffusers import ConfigMixin, ModelMixin; print('diffusers import OK')"
 
 WORKDIR /workspace
-COPY evaluate.py .
+COPY evaluate_direct.py .
 
-ENTRYPOINT ["python", "evaluate.py"]
+ENTRYPOINT ["python", "evaluate_direct.py"]
